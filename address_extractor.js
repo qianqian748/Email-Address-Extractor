@@ -1,16 +1,16 @@
-// add this code to your google script editor
-
-
 function all() { 
   ss = SpreadsheetApp.getActiveSpreadsheet();
-  userInput = ss.getActiveSheet().getRange(1,1,1,9).getCell(1,9).getValue();
+  error = false;
   GetAddresses();
+  if(error == false){
   Duplicates();
+  }
 }
 
 function GetAddresses ()
 {
   // message to tell user the process is going on 
+  var userInput = ss.getActiveSheet().getRange(1,1,1,9).getCell(1,9).getValues();
   console.log("✅userInput passed into getaddress: "+userInput)
   ss.toast("Fetching data......")
 
@@ -56,7 +56,8 @@ function GetAddresses ()
     var addressonly = mailFrom.replace(/^.+<([^>]+)>$/, "$1")
     var userEmail = Session.getActiveUser().getEmail();
 
-    //check if the first msg is sent from filtered email address. if yes, skip to next thread    
+    //check if the first msg is sent from repetively received email address. if yes, skip to next thread    
+    //if is filtered, skip the thread.
     if (userInput.indexOf(addressonly) >= 0) {
       console.log("skip this thread: " + addressonly);
       continue;
@@ -115,7 +116,13 @@ function GetAddresses ()
     messageData.push ([name, email, mailDate]);
   }
    // Add data to corresponding sheet
-  sheet.getRange (sheet.getLastRow() + 1, 1, messageData.length, 3).setValues (messageData);
+  try{
+    sheet.getRange (sheet.getLastRow() + 1, 1, messageData.length, 3).setValues (messageData);
+    }
+  catch(err){
+      ss.toast("Uh oh,no data was found. Check your date format", "⚠️ Error",15);
+      error = true;
+  }
 }
 
 
@@ -133,7 +140,7 @@ function onOpen ()
     var date = new Date();
     var data = Utilities.formatDate(date, 'GMT+08:00', "yyyy/MM/dd")
     const preset = [["Sender","Email Address","Date of Last Msg"," ",
-    "Retrieving email addresses after this date:(yyyy/mm/dd):",date," ","Filter Email List"]]
+    "Retrieving email addresses after this date:(yyyy/mm/dd):",date," ","Filter Email List(in comma separated form):"]]
     sheet.getRange(1,1,1,8).setValues(preset);
 
 }
